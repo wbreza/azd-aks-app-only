@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: todo-nodejs-mongo-aks
+metadata:
+  template: todo-nodejs-mongo-aks@0.0.1-beta
+workflows:
+  up: 
+    steps:
+      - azd: provision
+      - azd: deploy --all
+services:
+  web:
+    resourceGroup: ${CLUSTER_RESOURCE_GROUP}
+    project: ./src/web
+    dist: dist
+    language: js
+    host: aks
+  api:
+    resourceGroup: ${CLUSTER_RESOURCE_GROUP}
+    project: ./src/api
+    language: js
+    host: aks
+    k8s:
+      ingress:
+        relativePath: api
+    hooks:
+      postdeploy:
+        windows:
+          shell: pwsh
+          run: azd env set REACT_APP_API_BASE_URL $env:SERVICE_API_ENDPOINT_URL
+        posix:
+          shell: sh
+          run: azd env set REACT_APP_API_BASE_URL ${SERVICE_API_ENDPOINT_URL}
